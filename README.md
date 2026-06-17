@@ -5,7 +5,6 @@
 
 - 📫 How to reach me **devyanitharwal12@gmail.com**
 
-- 📄 Know about my experiences [https://drive.google.com/file/d/15xxFHASm6mwHIXAKPAaHmm22xj40EGgG/view?usp=sharing](https://drive.google.com/file/d/15xxFHASm6mwHIXAKPAaHmm22xj40EGgG/view?usp=sharing)
 
 <h3 align="left">Connect with me:</h3>
 <p align="left">
