@@ -3,6 +3,11 @@
 
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=devyan2006&label=Profile%20views&color=0e75b6&style=flat" alt="devyan2006" /> </p>
 
+<!-- 🎮 Arcade Contribution Graph -->
+<p align="center">
+  <img src="https://raw.githubusercontent.com/DeVyAN2006/DeVyAN2006/pacman-output/pacman-contribution-graph.svg" alt="Pacman Contribution Graph" />
+</p>
+
 - 📫 How to reach me **devyanitharwal12@gmail.com**
 
 
