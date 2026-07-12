@@ -1,7 +1,9 @@
-<h1 align="center">Hi 👋, I'm Devyan Nitharwal</h1>
-<h3 align="center">Sophomore Undergrad in Computer Science</h3>
-
-<p align="left"> <img src="https://komarev.com/ghpvc/?username=devyan2006&label=Profile%20views&color=0e75b6&style=flat" alt="devyan2006" /> </p>
+<a href="https://github.com/DeVyAN2006/DeVyAN2006">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/DeVyAN2006/DeVyAN2006/main/dark.svg">
+    <img alt="GitHub Profile README" src="https://raw.githubusercontent.com/DeVyAN2006/DeVyAN2006/main/light.svg">
+  </picture>
+</a>
 
 <!-- 🎮 Arcade Contribution Graph -->
 <p align="center">
@@ -9,7 +11,6 @@
 </p>
 
 - 📫 How to reach me **devyanitharwal12@gmail.com**
-
 
 <h3 align="left">Connect with me:</h3>
 <p align="left">
