@@ -113,10 +113,13 @@ def loc_query(owner_affiliation, comment_size=0, force_cache=False, cursor=None,
     variables = {'owner_affiliation': owner_affiliation, 'login': USER_NAME, 'cursor': cursor}
     request = simple_request(loc_query.__name__, query, variables)
     if request.json()['data']['user']['repositories']['pageInfo']['hasNextPage']:   
-        edges += request.json()['data']['user']['repositories']['edges']            
+        # Filter out None nodes before adding to edges
+        valid_edges = [e for e in request.json()['data']['user']['repositories']['edges'] if e.get('node')]
+        edges += valid_edges
         return loc_query(owner_affiliation, comment_size, force_cache, request.json()['data']['user']['repositories']['pageInfo']['endCursor'], edges)
     else:
-        return cache_builder(edges + request.json()['data']['user']['repositories']['edges'], comment_size, force_cache)
+        valid_edges = [e for e in request.json()['data']['user']['repositories']['edges'] if e.get('node')]
+        return cache_builder(edges + valid_edges, comment_size, force_cache)
 
 def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
     cached = True
@@ -160,7 +163,12 @@ def flush_cache(edges, filename, comment_size):
     with open(filename, 'w') as f:
         f.writelines(data)
         for node in edges:
-            f.write(hashlib.sha256(node['node']['nameWithOwner'].encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
+            # Safety check for None nodes
+            if node.get('node') and 'nameWithOwner' in node['node']:
+                f.write(hashlib.sha256(node['node']['nameWithOwner'].encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
+            else:
+                # Write a placeholder so cache size stays consistent
+                f.write(hashlib.sha256('null_repo'.encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
 
 def add_archive():
     with open('cache/repo_archive.txt', 'r') as f: data = f.readlines()
@@ -185,7 +193,10 @@ def force_close_file(data, cache_comment):
 
 def stars_counter(data):
     total_stars = 0
-    for node in data: total_stars += node['node']['stargazers']['totalCount']
+    for node in data:
+        # Safety check for None nodes
+        if node.get('node'):
+            total_stars += node['node']['stargazers']['totalCount']
     return total_stars
 
 def svg_overwrite(filename, age_data, commit_data, star_data, repo_data, contrib_data, follower_data, loc_data):
@@ -265,7 +276,6 @@ if __name__ == '__main__':
     user_data, user_time = perf_counter(user_getter, USER_NAME)
     OWNER_ID, acc_date = user_data
     formatter('account data', user_time)
-    # Updated your birthday here:
     age_data, age_time = perf_counter(daily_readme, datetime.datetime(2006, 8, 12))
     formatter('age calculation', age_time)
     total_loc, loc_time = perf_counter(loc_query, ['OWNER', 'COLLABORATOR', 'ORGANIZATION_MEMBER'], 7)
