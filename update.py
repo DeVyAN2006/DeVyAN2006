@@ -113,12 +113,12 @@ def loc_query(owner_affiliation, comment_size=0, force_cache=False, cursor=None,
     variables = {'owner_affiliation': owner_affiliation, 'login': USER_NAME, 'cursor': cursor}
     request = simple_request(loc_query.__name__, query, variables)
     if request.json()['data']['user']['repositories']['pageInfo']['hasNextPage']:   
-        # Filter out None nodes before adding to edges
-        valid_edges = [e for e in request.json()['data']['user']['repositories']['edges'] if e.get('node')]
+        # Filter out None edges AND edges with None nodes
+        valid_edges = [e for e in request.json()['data']['user']['repositories']['edges'] if e and e.get('node')]
         edges += valid_edges
         return loc_query(owner_affiliation, comment_size, force_cache, request.json()['data']['user']['repositories']['pageInfo']['endCursor'], edges)
     else:
-        valid_edges = [e for e in request.json()['data']['user']['repositories']['edges'] if e.get('node')]
+        valid_edges = [e for e in request.json()['data']['user']['repositories']['edges'] if e and e.get('node')]
         return cache_builder(edges + valid_edges, comment_size, force_cache)
 
 def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
@@ -139,14 +139,16 @@ def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
     data = data[comment_size:] 
     for index in range(len(edges)):
         repo_hash, commit_count, *__ = data[index].split()
-        if repo_hash == hashlib.sha256(edges[index]['node']['nameWithOwner'].encode('utf-8')).hexdigest():
-            try:
-                if int(commit_count) != edges[index]['node']['defaultBranchRef']['target']['history']['totalCount']:
-                    owner, repo_name = edges[index]['node']['nameWithOwner'].split('/')
-                    loc = recursive_loc(owner, repo_name, data, cache_comment)
-                    data[index] = repo_hash + ' ' + str(edges[index]['node']['defaultBranchRef']['target']['history']['totalCount']) + ' ' + str(loc[2]) + ' ' + str(loc[0]) + ' ' + str(loc[1]) + '\n'
-            except TypeError: 
-                data[index] = repo_hash + ' 0 0 0 0\n'
+        # Added safety check for edge['node']
+        if edges[index].get('node') and 'nameWithOwner' in edges[index]['node']:
+            if repo_hash == hashlib.sha256(edges[index]['node']['nameWithOwner'].encode('utf-8')).hexdigest():
+                try:
+                    if int(commit_count) != edges[index]['node']['defaultBranchRef']['target']['history']['totalCount']:
+                        owner, repo_name = edges[index]['node']['nameWithOwner'].split('/')
+                        loc = recursive_loc(owner, repo_name, data, cache_comment)
+                        data[index] = repo_hash + ' ' + str(edges[index]['node']['defaultBranchRef']['target']['history']['totalCount']) + ' ' + str(loc[2]) + ' ' + str(loc[0]) + ' ' + str(loc[1]) + '\n'
+                except TypeError: 
+                    data[index] = repo_hash + ' 0 0 0 0\n'
     with open(filename, 'w') as f:
         f.writelines(cache_comment)
         f.writelines(data)
@@ -162,10 +164,10 @@ def flush_cache(edges, filename, comment_size):
         if comment_size > 0: data = f.readlines()[:comment_size] 
     with open(filename, 'w') as f:
         f.writelines(data)
-        for node in edges:
-            # Safety check for None nodes
-            if node.get('node') and 'nameWithOwner' in node['node']:
-                f.write(hashlib.sha256(node['node']['nameWithOwner'].encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
+        for edge in edges:
+            # Safety check for None edges and nodes
+            if edge and edge.get('node') and 'nameWithOwner' in edge['node']:
+                f.write(hashlib.sha256(edge['node']['nameWithOwner'].encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
             else:
                 # Write a placeholder so cache size stays consistent
                 f.write(hashlib.sha256('null_repo'.encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
@@ -193,10 +195,10 @@ def force_close_file(data, cache_comment):
 
 def stars_counter(data):
     total_stars = 0
-    for node in data:
-        # Safety check for None nodes
-        if node.get('node'):
-            total_stars += node['node']['stargazers']['totalCount']
+    for edge in data:
+        # Safety check for None edges and nodes
+        if edge and edge.get('node'):
+            total_stars += edge['node']['stargazers']['totalCount']
     return total_stars
 
 def svg_overwrite(filename, age_data, commit_data, star_data, repo_data, contrib_data, follower_data, loc_data):
